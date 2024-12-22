@@ -1,122 +1,100 @@
 import heapq
 
-def welcome_message():
-    print("\nДобро пожаловать в логистическую компанию PUTI!")
-    print("Мы поможем вам найти кратчайший путь между городами.")
-
-def display_graph(graph):
+graph = {
+    "Москва": {"Санкт-Петербург": 700, "Казань": 820},
+    "Санкт-Петербург": {"Москва": 700, "Мурманск": 1400},
+    "Казань": {"Москва": 820, "Уфа": 530},
+    "Мурманск": {"Санкт-Петербург": 1400, "Архангельск": 1000},
+    "Архангельск": {"Мурманск": 1000, "Вологда": 550},
+    "Уфа": {"Казань": 530, "Екатеринбург": 420},
+    "Екатеринбург": {"Уфа": 420, "Челябинск": 200},
+    "Челябинск": {"Екатеринбург": 200, "Омск": 1120},
+    "Омск": {"Челябинск": 1120, "Новосибирск": 680},
+    "Новосибирск": {"Омск": 680}
+}
+def show(graph):
     print("\nДоступные пути между городами:")
-    for city, connections in graph.items():
-        for neighbor, distance in connections.items():
-            print(f"{city} -> {neighbor} : {distance} км")
+    for city,paths in graph.items():
+        for dest,dist in paths.items():
+            print(f"{city} -> {dest} : {dist} км")
 
-def dijkstra(graph, start, end):
+def find(graph,start,end):
     if start not in graph or end not in graph:
-        return None, "Один из городов не существует в графе."
-
-    distances = {city: float('inf') for city in graph}
-    distances[start] = 0
-    priority_queue = [(0, start)]
-    previous_nodes = {city: None for city in graph}
-
-    while priority_queue:
-        current_distance, current_city = heapq.heappop(priority_queue)
-
-        if current_city == end:
+        return None,"Город отсутствует."
+    dist={city:float('inf') for city in graph}
+    dist[start]=0
+    queue=[(0,start)]
+    prev={city:None for city in graph}
+    while queue:
+        cur_dist,cur_city=heapq.heappop(queue)
+        if cur_city==end:
             break
-
-        if current_distance > distances[current_city]:
+        if cur_dist>dist[cur_city]:
             continue
-
-        for neighbor, weight in graph[current_city].items():
-            distance = current_distance + weight
-            if distance < distances[neighbor]:
-                distances[neighbor] = distance
-                previous_nodes[neighbor] = current_city
-                heapq.heappush(priority_queue, (distance, neighbor))
-
-    path = []
-    current = end
-    while current:
-        path.append(current)
-        current = previous_nodes[current]
+        for next_city,length in graph[cur_city].items():
+            total=cur_dist+length
+            if total<dist[next_city]:
+                dist[next_city]=total
+                prev[next_city]=cur_city
+                heapq.heappush(queue,(total,next_city))
+    path=[]
+    cur=end
+    while cur:
+        path.append(cur)
+        cur=prev[cur]
     path.reverse()
-
-    if distances[end] == float('inf'):
-        return None, "Маршрута нет."
-    return path, distances[end]
+    if dist[end]==float('inf'):
+        return None,"Маршрута нет"
+    return path,dist[end]
 
 def add_city(graph):
-    city = input("Введите название нового города: ").strip()
+    city=input("Введите название нового города: ").strip()
     if city in graph:
         print("Город уже существует.")
         return
-    graph[city] = {}
+    graph[city]={}
     print(f"Город {city} добавлен.")
 
 def add_path(graph):
-    city1 = input("Введите название первого города: ").strip()
-    city2 = input("Введите название второго города: ").strip()
+    city1=input("Введите первый город: ").strip()
+    city2=input("Введите второй город: ").strip()
     if city1 not in graph or city2 not in graph:
-        print("Один или оба города не существуют. Сначала добавьте города.")
+        print("Города не существуют. Добавьте их сначала.")
         return
     try:
-        distance = int(input("Введите расстояние между городами (км): "))
-        if distance <= 0:
+        dist=int(input("Введите расстояние (км): "))
+        if dist<=0:
             raise ValueError("Расстояние должно быть положительным.")
-        graph[city1][city2] = distance
-        graph[city2][city1] = distance
-        print(f"Путь между {city1} и {city2} длиной {distance} км добавлен.")
+        graph[city1][city2]=dist
+        graph[city2][city1]=dist
+        print(f"Путь между {city1} и {city2} длиной {dist} км добавлен.")
     except ValueError as e:
         print(f"Ошибка: {e}")
 
-def main():
-    graph = {
-        "Москва": {"Санкт-Петербург": 700, "Казань": 820},
-        "Санкт-Петербург": {"Москва": 700, "Мурманск": 1400},
-        "Казань": {"Москва": 820, "Уфа": 530},
-        "Мурманск": {"Санкт-Петербург": 1400, "Архангельск": 1000},
-        "Архангельск": {"Мурманск": 1000, "Вологда": 550},
-        "Уфа": {"Казань": 530, "Екатеринбург": 420},
-        "Екатеринбург": {"Уфа": 420, "Челябинск": 200},
-        "Челябинск": {"Екатеринбург": 200, "Омск": 1120},
-        "Омск": {"Челябинск": 1120, "Новосибирск": 680},
-        "Новосибирск": {"Омск": 680}
-    }
-
-    while True:
-        welcome_message()
-        display_graph(graph)
-
-        print("\nМеню:")
-        print("1. Найти кратчайший маршрут")
-        print("2. Добавить новый город")
-        print("3. Добавить новый путь между городами")
-        print("4. Выход")
-
-        choice = input("Выберите действие (1-4): ").strip()
-
-        if choice == "1":
-            start = input("Введите начальный город: ").strip()
-            end = input("Введите конечный город: ").strip()
-            path, distance = dijkstra(graph, start, end)
-            if path:
-                print(f"Кратчайший маршрут: {' -> '.join(path)} (длина: {distance} км)")
-            else:
-                print(distance)
-
-        elif choice == "2":
-            add_city(graph)
-
-        elif choice == "3":
-            add_path(graph)
-
-        elif choice == "4":
-            print("Спасибо за использование нашего приложения!")
-            break
-
+while True:
+    print("\nДобро пожаловать в PUTI")
+    print("Мы поможем найти кратчайший путь между городами")
+    show(graph)
+    print("\nМеню:")
+    print("1. Найти маршрут")
+    print("2. Добавить город")
+    print("3. Добавить путь")
+    print("4. Выход")
+    cmd=input("Выберите действие (1-4): ").strip()
+    if cmd=="1":
+        start=input("Введите начальный город: ").strip()
+        end=input("Введите конечный город: ").strip()
+        path,dist=find(graph,start,end)
+        if path:
+            print(f"Маршрут: {' -> '.join(path)} (длина: {dist} км)")
         else:
-            print("Неверный ввод. Попробуйте снова.")
-
-if __name__ == "__main__":
-    main()
+            print(dist)
+    elif cmd=="2":
+        add_city(graph)
+    elif cmd=="3":
+        add_path(graph)
+    elif cmd=="4":
+        print("Спасибо за использование!")
+        break
+    else:
+        print("Неверный ввод.")
